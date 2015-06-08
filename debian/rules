@@ -1,0 +1,50 @@
+#!/usr/bin/make -f
+
+export VERSION := $(shell dpkg-parsechangelog|grep Version|cut -d' ' -f2|sed s/.*really//g)
+export CFLAGS := -Wall -W -Wno-unused-parameter $(shell dpkg-buildflags --get CFLAGS) $(shell dpkg-buildflags --get CPPFLAGS) -D'IFUPDOWN_VERSION="$(VERSION)"'
+export LDFLAGS := $(shell dpkg-buildflags --get LDFLAGS)
+ifeq "$(origin CC)" "default"
+export CC := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)-gcc
+endif
+export ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+export DESTDIR := debian/$(shell dh_listpackages)
+
+ifeq "$(ARCH)" "kfreebsd"
+CFLAGS += -D'LO_IFACE="lo0"'
+endif
+
+%:
+	dh $@
+
+override_dh_installinit:
+	dh_installinit --name=networking --no-start
+	install -p -m 0644 debian/networking.defaults $(DESTDIR)/etc/default/networking
+	dh_installinit --name=network-interface-container --noscripts
+	dh_installinit --name=network-interface-security --noscripts
+	dh_installinit --name=network-interface --noscripts
+	dh_installinit --name=networking --noscripts
+
+override_dh_installifupdown:
+	dh_installifupdown --name=upstart
+
+override_dh_auto_clean:
+	$(MAKE) clean
+	rm -rf tests/
+
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+override_dh_auto_test:
+	chmod a+rx debian/testbuild
+	@echo running debian/testbuild
+	@if ! debian/testbuild; then \
+	     echo '=================================================='; \
+	     echo 'AUTOMATIC TESTS FAILED -- Something built wrong or'; \
+	     echo 'there is a bug in the code!!! Either way something'; \
+	     echo 'is completely screwed up!!! File a bug!'; \
+	     echo ''; \
+	     echo 'Aborting build.'; \
+	     echo '=================================================='; \
+	     exit 1; \
+	fi
+endif
+endif
