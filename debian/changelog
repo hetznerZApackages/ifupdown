@@ -2,7 +2,7 @@ ifupdown (0.7.54+hetz1~exp1) jessie-hetz-experimental; urgency=medium
 
   * Need the bug fix for missing /run/network as below 
 
- -- Geoff Robertson <gr@hetzner.co.za>  Thu, 24 Jan 2019 09:48:05 +0200
+ -- Geoff Robertson <gr@hetzner.co.za>  Thu, 24 Jan 2019 09:53:20 +0200
 
 ifupdown (0.7.54) unstable; urgency=medium
 
